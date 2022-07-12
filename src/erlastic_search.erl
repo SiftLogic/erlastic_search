@@ -95,6 +95,8 @@
         ,aliases/2
         ,bulk_operation/1
         ,bulk_operation/2
+        ,put_setting/2
+        ,put_setting/3
 ]).
 
 
@@ -484,7 +486,7 @@ search(Params, Index, Type, Query, Opts) ->
 -spec multi_search(#erls_params{}, list({HeaderInformation :: headers(), SearchRequest :: erlastic_json() | binary()})) -> {ok, ResultJson :: erlastic_success_result()} | {error, Reason :: any()}.
 multi_search(Params, HeaderJsonTuples) ->
     Body = lists:map(fun({HeaderInformation, SearchRequest}) ->
-        [ jsx:encode(HeaderInformation), <<"\n">>, maybe_encode_doc(SearchRequest), <<"\n">> ]
+        [ erls_json:encode(HeaderInformation), <<"\n">>, maybe_encode_doc(SearchRequest), <<"\n">> ]
     end, HeaderJsonTuples),
     erls_resource:get(Params, <<"/_msearch">>, [], [], iolist_to_binary(Body), Params#erls_params.http_client_options).
 
@@ -697,6 +699,19 @@ bulk_operation(Params, OperationIndexTypeIdJsonTuples) ->
 
     erls_resource:post(Params, <<"/_bulk">>, [], [], iolist_to_binary(Body), Params#erls_params.http_client_options).
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Insert a setting into an Elasticsearch index
+%% @end
+%%--------------------------------------------------------------------
+-spec put_setting(binary(), erlastic_json() | binary()) -> {ok, erlastic_success_result()} | {error, any()}.
+put_setting(Index, Doc) ->
+  put_setting(#erls_params{}, Index, Doc).
+
+-spec put_setting(#erls_params{}, binary(), erlastic_json() | binary()) -> {ok, erlastic_success_result()} | {error, any()}.
+put_setting(Params, Index, Doc) ->
+  erls_resource:put(Params, filename:join([Index, "_settings"]), [], [], maybe_encode_doc(Doc), Params#erls_params.http_client_options).
+
 %%% Internal functions
 
 -spec search_helper(binary(), #erls_params{}, list() | binary(), list() | binary(), erlastic_json() | binary(), list()) -> {ok, erlastic_success_result()} | {error, any()}.
@@ -725,7 +740,7 @@ build_header(Operation, Index, Type, Id, HeaderInformation) ->
                 false -> [{<<"_id">>, Id} | Header1]
               end,
 
-    [jsx:encode([{erlang:atom_to_binary(Operation, utf8), Header2}])].
+    [erls_json:encode([{erlang:atom_to_binary(Operation, utf8), Header2}])].
 
 build_body(delete, no_body) ->
     [<<"\n">>];

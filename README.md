@@ -6,31 +6,53 @@ An Erlang client for [Elasticsearch](https://www.elastic.co/products/elasticsear
 Build and Run
 -------------
 
-```shell
-$ ./rebar3 shell
-==> mimetypes (compile)
-==> hackney (compile)
-==> jsx (compile)
-==> erlastic_search (compile)
-exec erl +K true -pa ebin -env ERL_LIBS deps -name erlastic@127.0.0.1 -s erlastic_search_app start_deps
-Erlang R16B (erts-5.10.1) [source-05f1189] [64-bit] [smp:8:8] [async-threads:10] [hipe] [kernel-poll:true]
+Start a rebar3 shell 
 
-Eshell V5.10.1  (abort with ^G)
-(erlastic@127.0.0.1)1> erlastic_search:create_index(<<"index_name">>).
+```shell
+rebar3 shell
+```
+
+Create an index :
+
+```erlang
+erlastic_search:create_index(<<"index_name">>).
+```
+```
 {ok, [{<<"ok">>,true},{<<"acknowledged">>,true}]}
-(erlastic@127.0.0.1)2> erlastic_search:index_doc(<<"index_name">>, <<"type">>, [{<<"key1">>, <<"value1">>}]).
+```
+
+Index a document : 
+
+```erlang
+erlastic_search:index_doc(<<"index_name">>, <<"type">>, [{<<"key1">>, <<"value1">>}]).
+```
+```
 {ok,[{<<"ok">>,true},
      {<<"_index">>,<<"index_name">>},
      {<<"_type">>,<<"type">>},
      {<<"_id">>,<<"T-EzM_yeTkOEHPL9cN5B2g">>},
      {<<"_version">>,1}]}
-(erlastic@127.0.0.1)3> erlastic_search:index_doc_with_id(<<"index_name">>, <<"type">>, <<"id1">>, [{<<"key1">>, <<"value1">>}]).
+````
+
+Index a document (providing a document id) : 
+
+```erlang
+erlastic_search:index_doc_with_id(<<"index_name">>, <<"type">>, <<"id1">>, [{<<"key1">>, <<"value1">>}]).
+```
+```
 {ok,[{<<"ok">>,true},
      {<<"_index">>,<<"index_name">>},
      {<<"_type">>,<<"type">>},
      {<<"_id">>,<<"id1">>},
      {<<"_version">>,2}]}
-(erlastic@127.0.0.1)4> erlastic_search:search(<<"index_name">>, <<"type">>, <<"key1:value1">>).
+```
+
+Search for a document : 
+
+```erlang
+erlastic_search:search(<<"index_name">>, <<"type">>, <<"key1:value1">>).
+```
+```
 {ok,[{<<"took">>,6},
      {<<"timed_out">>,false},
      {<<"_shards">>,
@@ -59,16 +81,22 @@ Eshell V5.10.1  (abort with ^G)
 Testing
 -------
 
-First start a local Elasticsearch:
+In another terminal use docker-compose to start an Elasticsearch instance :
 
 ```bash
-$ bin/elasticsearch
+docker-compose up
+```
+
+For convenience, you can also start a Kibana instance for analysis/visualization :
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose-kibana.yml up
 ```
 
 Run Common Test:
 
 ```bash
-$ ./rebar3 ct
+rebar3 ct
 ```
 
 Using another JSON library than `jsx`
@@ -81,11 +109,18 @@ And similarly, all of Elasticsearch's replies will be decoded with `jsx`.
 However, you might already be using another JSON library in your project, which
 might encode and decode JSONs from and to a different erlang representation.
 For example, [`jiffy`](https://github.com/davisp/jiffy):
+
 ```
 1> SimpleJson = <<"{\"key\":\"value\"}">>.
 <<"{\"key\":\"value\"}">>
+```
+
+```
 2> jiffy:decode(SimpleJson).
 {[{<<"key">>,<<"value">>}]}
+```
+
+```
 3> jsx:decode(SimpleJson).
 [{<<"key">>,<<"value">>}]
 ```
